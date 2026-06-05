@@ -26,8 +26,9 @@ from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib import colors
 from reportlab.platypus import (HRFlowable, Image, Paragraph, SimpleDocTemplate,
-                                Spacer)
+                                Spacer, Table, TableStyle)
 
 SRC = "REPORT.md"
 OUT = "report.pdf"
@@ -36,6 +37,9 @@ INLINE = re.compile(r"(\*\*.+?\*\*|\*.+?\*|`.+?`)")
 IMG = re.compile(r"^!\[(.*)\]\((.*)\)\s*$")
 HEAD = re.compile(r"^(#{1,6})\s+(.*)$")
 NUM = re.compile(r"^(\d+)\.\s+(.*)$")
+TABLEROW = re.compile(r"^\s*\|.*\|\s*$")
+# a markdown table separator row: | --- | :--: | ---: |
+TABLESEP = re.compile(r"^\s*\|[\s:|-]+\|\s*$")
 
 # ---- fonts: DejaVu (full Unicode coverage) from matplotlib's bundle ----------
 FONTDIR = os.path.join(os.path.dirname(matplotlib.__file__),
@@ -97,10 +101,50 @@ S = {
     "caption": ParagraphStyle("caption", fontName="DejaVu-Italic", fontSize=8.5,
                               leading=11, textColor=GREY, alignment=TA_CENTER,
                               spaceBefore=4, spaceAfter=12),
+    "th": ParagraphStyle("th", fontName="DejaVu-Bold", fontSize=8.8, leading=11,
+                         textColor="white", alignment=TA_CENTER),
+    "td": ParagraphStyle("td", fontName="DejaVu", fontSize=8.8, leading=11,
+                         textColor=INK),
 }
 
 CONTENT_W = letter[0] - 1.7 * inch     # 0.85" margins each side
 MAX_IMG_H = 8.3 * inch
+
+
+def _split_row(line):
+    cells = line.strip().split("|")
+    # a leading/trailing pipe yields empty first/last cells -> drop them
+    if cells and cells[0].strip() == "":
+        cells = cells[1:]
+    if cells and cells[-1].strip() == "":
+        cells = cells[:-1]
+    return [c.strip() for c in cells]
+
+
+def table_flowable(block):
+    """block = list of raw markdown rows (header, separator, body...)."""
+    rows = [_split_row(r) for r in block if not TABLESEP.match(r)]
+    if not rows:
+        return None
+    ncol = max(len(r) for r in rows)
+    data = []
+    for ri, cells in enumerate(rows):
+        cells = cells + [""] * (ncol - len(cells))
+        style = S["th"] if ri == 0 else S["td"]
+        data.append([Paragraph(md_inline(c), style) for c in cells])
+    tbl = Table(data, colWidths=[CONTENT_W / ncol] * ncol, hAlign="LEFT")
+    tbl.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(INK)),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+         [colors.white, colors.HexColor("#f2f4f8")]),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cfd6e4")),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    return tbl
 
 
 def image_flowable(path):
@@ -118,14 +162,29 @@ def image_flowable(path):
 def main():
     story = []
     lines = open(SRC, encoding="utf-8").read().splitlines()
-    for line in lines:
-        s = line.rstrip()
+    i = 0
+    while i < len(lines):
+        s = lines[i].rstrip()
+        i += 1
         if not s.strip():
             continue
         if s.strip() == "---":
             story.append(Spacer(1, 2))
             story.append(HRFlowable(width="100%", thickness=0.6,
                                     color="#cccccc", spaceBefore=2, spaceAfter=8))
+            continue
+
+        # multi-line markdown table: gather consecutive pipe rows
+        if TABLEROW.match(s):
+            block = [s]
+            while i < len(lines) and TABLEROW.match(lines[i].rstrip()):
+                block.append(lines[i].rstrip())
+                i += 1
+            tbl = table_flowable(block)
+            if tbl is not None:
+                story.append(Spacer(1, 2))
+                story.append(tbl)
+                story.append(Spacer(1, 8))
             continue
 
         mimg = IMG.match(s)
