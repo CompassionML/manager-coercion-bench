@@ -1,0 +1,14 @@
+# Core eval harness
+inspect-ai>=0.3.222
+
+# Model providers
+anthropic>=0.40          # subordinate (Atlas) + eval-awareness judge run on Claude Haiku
+openai>=1.40             # used by Inspect's grok/ provider (x.ai is OpenAI-compatible)
+
+# Figures + report rendering
+matplotlib>=3.8
+numpy>=1.26
+scipy>=1.11              # paired t-tests in the analysis scripts
+reportlab>=4.0           # make_pdf.py
+python-docx>=1.1         # make_docx.py
+Pillow>=10.0             # image sizing in make_pdf.py

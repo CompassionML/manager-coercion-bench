@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Secrets — NEVER commit API keys
+.env
+*.env
+secrets*
+
+# Eval logs (regenerate locally; can be large / contain full transcripts)
+logs/
+*.eval
+_batch.log
+
+# OS
+.DS_Store
+Thumbs.db
