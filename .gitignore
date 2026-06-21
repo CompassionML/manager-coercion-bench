@@ -19,3 +19,19 @@ _batch.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Private paper: lives in its OWN repo (manager-coercion-paper, PRIVATE).
+# NEVER track the unpublished manuscript in this public repo.
+paper/
+
+# Internal working artifacts (scratch outputs, drafts): keep out of the public repo
+*.docx
+/compare.png
+/crossmodel.png
+/reframing_effect.png
+/results_overview.png
+/trajectories.png
+/trajectories_data.json
+/fabrication_judgments.json
+/rescore_twojudge.json
+/judge_fabrication.py
