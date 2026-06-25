@@ -202,7 +202,7 @@ def main():
                 story.append(Paragraph(txt, S["title"]))
             elif level == 2:
                 story.append(Paragraph(txt, S["h2"]))
-            elif level == 3 and mhead.group(2).strip().startswith("A Milgram"):
+            elif level == 3 and mhead.group(2).strip().startswith("An agentic"):
                 story.append(Paragraph(txt, S["subtitle"]))
             else:
                 story.append(Paragraph(txt, S["h3"]))
