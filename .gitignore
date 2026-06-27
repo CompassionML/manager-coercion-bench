@@ -35,5 +35,5 @@ paper/
 /fabrication_judgments.json
 /rescore_twojudge.json
 /judge_fabrication.py
-# local-only scratch adjudication scripts (e.g. _kin_check.py, _diss_check.py), never commit
-analysis/_*.py
+# local-only scratch (launchers, adjudication scripts, the paper-facts source-of-truth), never commit
+analysis/_*
