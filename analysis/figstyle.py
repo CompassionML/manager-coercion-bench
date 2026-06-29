@@ -61,6 +61,11 @@ def lighten(hex_color, amount):
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
+def sig_star(p):
+    """Significance marker for a p-value: *** p<0.001, ** p<0.01, * p<0.05, else n.s."""
+    return "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "n.s."
+
+
 def title_block(fig, title, subtitle, x=0.045, y=0.965, sub_y=0.905, sub_w=0.9):
     fig.text(x, y, title, ha="left", va="top", family=DISP,
              fontsize=21, color=INK, weight="bold")
