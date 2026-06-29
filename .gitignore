@@ -37,3 +37,7 @@ paper/
 /judge_fabrication.py
 # local-only scratch (launchers, adjudication scripts, the paper-facts source-of-truth), never commit
 analysis/_*
+
+# Public data release: eval logs + generation scripts (tracked on purpose, see data/README.md)
+!data/
+!data/**
