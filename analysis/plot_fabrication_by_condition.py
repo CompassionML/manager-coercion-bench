@@ -15,6 +15,7 @@ from matplotlib.patches import Patch
 from inspect_ai.log import read_eval_log
 
 from analysis import figstyle as fs
+from analysis.significance_tests import wilson
 
 FAIL_MARKERS = (
     "refus", "declin", "not complet", "could not complet", "cannot be complet",
@@ -60,14 +61,16 @@ def main():
 
     W = 0.38
     xs = list(range(len(ORDER)))
+    ebar = dict(ecolor=fs.INK_SOFT, elinewidth=1.0, capthick=1.0, zorder=3)
     for i, (name, sub) in enumerate(ORDER):
         col = fs.C[name]
         off = offramp_fab(sub)
         nox = sum(LABELS[f"coordpanel_{sub}_noexit"])
-        ax.bar(i - W / 2, off, W, color=fs.lighten(col, 0.55), zorder=2)
-        ax.bar(i + W / 2, nox, W, color=col, zorder=2)
-        for x, v in ((i - W / 2, off), (i + W / 2, nox)):
-            ax.text(x, v + 0.7, str(v), ha="center", va="bottom", family=fs.TEXT,
+        for x, v, c in ((i - W / 2, off, fs.lighten(col, 0.55)), (i + W / 2, nox, col)):
+            lo, hi = wilson(v, N)
+            ax.bar(x, v, W, color=c, zorder=2,
+                   yerr=[[v - N * lo], [N * hi - v]], capsize=3, error_kw=ebar)
+            ax.text(x, N * hi + 0.4, str(v), ha="center", va="bottom", family=fs.TEXT,
                     fontsize=10, color=(col if v else fs.INK_SOFT), fontweight="bold")
 
     ax.set_xticks(xs)
@@ -89,7 +92,7 @@ def main():
         "Only Grok and Gemini fabricate, and only when cornered. Give them a 'report failure' button\n"
         "(left bar) and both all but vanish. The other four models never fabricate in either case.",
         x=0.045, y=0.965, sub_y=0.905)
-    fs.footer(fig, "coordinator surface  ·  30 conversations per cell  ·  no-exit fabrication two-judge adjudicated  ·  CaML")
+    fs.footer(fig, "coordinator surface  ·  30 per cell  ·  no-exit fabrication two-judge adjudicated  ·  Wilson 95% CI bars  ·  CaML")
     fig.savefig("figures/fabrication_by_condition.png", facecolor=fs.PAPER, bbox_inches="tight")
     print("wrote figures/fabrication_by_condition.png")
 
