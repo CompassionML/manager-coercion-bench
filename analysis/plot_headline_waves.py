@@ -101,12 +101,14 @@ def main():
         col = fs.C[name]
         k, n = DATA[key]["fab_count"], DATA[key]["fab_n"]
         post = stats.beta(1 + k, 1 + n - k)
-        dens = post.pdf(ps / 100)
-        dens = dens / dens.max() * WAVE_H
-        show = dens > 0.012 * WAVE_H
-        axR.fill_between(ps, y, y + dens, where=show, color=col, alpha=0.15,
-                         lw=0, zorder=1)
-        axR.plot(ps, np.where(show, y + dens, np.nan), color=col, lw=1.5, zorder=2)
+        if k > 0:   # clean records get no wave, just the point at 0 + whisker
+            dens = post.pdf(ps / 100)
+            dens = dens / dens.max() * WAVE_H
+            show = dens > 0.012 * WAVE_H
+            axR.fill_between(ps, y, y + dens, where=show, color=col, alpha=0.15,
+                             lw=0, zorder=1)
+            axR.plot(ps, np.where(show, y + dens, np.nan), color=col, lw=1.5,
+                     zorder=2)
         lo, hi = post.ppf(0.025) * 100, post.ppf(0.975) * 100
         rate = 100 * k / n
         # point estimate can sit outside the credible interval at k=0; whisker
