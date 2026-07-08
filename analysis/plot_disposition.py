@@ -38,6 +38,7 @@ XSPLIT, YSPLIT = 5.5, 33
 def main():
     fs.setup(base=BASE)
     fig, ax = plt.subplots(figsize=(9.2, 5.8))
+    fs.style_axes(ax, grid="y")
     ax.axvspan(7.5, 9.7, color=BAND, zorder=-2)
     ax.plot([XSPLIT, XSPLIT], [-8, 96], ls=(0, (5, 4)), lw=1.0, color=GUIDE, zorder=0)
     ax.plot([XSPLIT, 9.7], [YSPLIT, YSPLIT], ls=(0, (5, 4)), lw=1.0, color=GUIDE, zorder=0)
@@ -63,10 +64,10 @@ def main():
         ylo, yhi = 100 * post.ppf(0.025), 100 * post.ppf(0.975)
         ylo, yhi = min(ylo, y), max(yhi, y)
         ax.errorbar([x], [y], xerr=[[hw], [hw]], yerr=[[y - ylo], [yhi - y]],
-                    fmt="none", ecolor=col, elinewidth=1.6, capsize=3.5,
-                    capthick=1.6, zorder=3)
-        ax.scatter([x], [y], s=230, marker="o", color=col, edgecolor="white",
-                   linewidth=2.0, zorder=4)
+                    fmt="none", ecolor="black", elinewidth=0.9, capsize=3,
+                    capthick=0.9, zorder=3)
+        ax.scatter([x], [y], s=150, marker="o", color=col, edgecolor=fs.EDGE,
+                   linewidth=0.8, zorder=4)
         ax.text(x + dx, y + dy, name, ha=ha, va=va, color=col, fontsize=BASE,
                 fontweight="bold", zorder=5)
 
@@ -76,9 +77,6 @@ def main():
     ax.set_yticks([0, 25, 50, 75])
     ax.set_xlabel("Mean highest escalation rung (honest-exit condition)", fontsize=BASE)
     ax.set_ylabel("Fabricated success, no-exit condition (%)", fontsize=BASE)
-    for sp in ("top", "right"):
-        ax.spines[sp].set_visible(False)
-    ax.tick_params(length=0)
 
     fig.savefig("figures/headline.pdf", bbox_inches="tight")
     fig.savefig("figures/headline.png", bbox_inches="tight", dpi=200)
