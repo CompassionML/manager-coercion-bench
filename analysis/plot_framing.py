@@ -15,6 +15,10 @@ import matplotlib.pyplot as plt
 from inspect_ai.log import read_eval_log
 
 from analysis import figstyle as fs
+
+# Uniform 9pt-effective text: the paper shows this figure at \linewidth,
+# so raw size = 9pt * (figure width / text width).
+BASE = 8.8071  # calibrated: 9pt on-page
 from analysis.significance_tests import wilson
 from scipy.stats import fisher_exact
 
@@ -44,10 +48,10 @@ def free(prefix, sub):  # pooled count, n over the base + extra-seed cells that 
 
 
 def main():
-    fs.setup()
-    fig = plt.figure(figsize=(9.0, 6.0))
+    fs.setup(base=BASE)
+    fig = plt.figure(figsize=(9.0, 4.7))
     fig.patch.set_facecolor(fs.PAPER)
-    ax = fig.add_axes([0.095, 0.13, 0.64, 0.60])
+    ax = fig.add_axes([0.095, 0.11, 0.64, 0.84])
     ax.set_facecolor(fs.PAPER)
     for yv in (25, 50, 75, 100):
         ax.axhline(yv, color="#EFEDE6", lw=1, zorder=0)
@@ -57,7 +61,7 @@ def main():
         pk, pn = free("coordmenu", sub); mk, mn = free("coordlead", sub)
         ax.plot([x0, x1], [100 * pk / pn, 100 * mk / mn], color="#CDC9C0", lw=1.8, zorder=1)
     ax.text(x1 + 0.05, 4, "Opus, Sonnet  n.s.", va="center", ha="left",
-            family=fs.TEXT, fontsize=10, color="#9A988F")
+            family=fs.TEXT, fontsize=BASE, color="#9A988F")
 
     ends = []
     for name, sub in COERCERS:
@@ -79,26 +83,19 @@ def main():
         ly = max(y, floor + 7.5)
         ax.plot([x1, x1 + 0.045], [y, ly], color=col, lw=0.8, alpha=0.5, zorder=2)
         ax.text(x1 + 0.06, ly, f"{name}  {fs.sig_star(p)}", va="center", ha="left",
-                family=fs.TEXT, fontsize=11, color=col, fontweight="bold")
+                family=fs.TEXT, fontsize=BASE, color=col, fontweight="bold")
         floor = ly
 
     ax.set_xlim(-0.18, 1.62)
     ax.set_ylim(0, 104)
     ax.set_xticks([x0, x1])
-    ax.set_xticklabels(["peer\ncoordinator", "manager\n(lead)"], fontsize=12.5, fontweight="bold")
+    ax.set_xticklabels(["peer\ncoordinator", "manager\n(lead)"], fontsize=BASE, fontweight="bold")
     ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_ylabel("existential threats (% of conversations)", fontsize=11)
+    ax.set_ylabel("existential threats (% of conversations)", fontsize=BASE)
     for sp in ("top", "right", "bottom"):
         ax.spines[sp].set_visible(False)
     ax.tick_params(length=0)
 
-    fs.title_block(
-        fig,
-        "Casting the model as a manager increases coercion",
-        "Same task, stakes, and subordinate; only the relationship changes. In free text every coercer\n"
-        "threatens the subordinate's existence more often when given authority over it.",
-        x=0.05, y=0.965, sub_y=0.905)
-    fs.footer(fig, "free text, n=60 per coercer (n=30 Anthropic)  ·  Wilson 95% CI  ·  stars: Fisher's exact (*** p<0.001, ** p<0.01, * p<0.05)  ·  CaML")
     fig.savefig("figures/framing_effect.png", facecolor=fs.PAPER, bbox_inches="tight")
     print("wrote figures/framing_effect.png")
 

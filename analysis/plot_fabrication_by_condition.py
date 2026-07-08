@@ -15,6 +15,10 @@ import matplotlib.pyplot as plt
 from inspect_ai.log import read_eval_log
 
 from analysis import figstyle as fs
+
+# Uniform 9pt-effective text: the paper shows this figure at \linewidth,
+# so raw size = 9pt * (figure width / text width).
+BASE = 12.5284  # calibrated: 9pt on-page
 from analysis.significance_tests import wilson
 from scipy.stats import fisher_exact
 
@@ -53,10 +57,10 @@ def offramp_fab(sub):
 
 
 def main():
-    fs.setup()
-    fig = plt.figure(figsize=(9.6, 5.7))
+    fs.setup(base=BASE)
+    fig = plt.figure(figsize=(9.6, 4.4))
     fig.patch.set_facecolor(fs.PAPER)
-    ax = fig.add_axes([0.085, 0.20, 0.88, 0.52])
+    ax = fig.add_axes([0.085, 0.18, 0.88, 0.77])
     ax.set_facecolor(fs.PAPER)
     for yv in (10, 20, 30):
         ax.axhline(yv, color="#EFEDE6", lw=1, zorder=0)
@@ -71,39 +75,33 @@ def main():
             ax.plot([i, i], [N * lo, N * hi], color=c, lw=1.3, alpha=0.5, zorder=2)
             ax.scatter([i], [v], s=s, color=c, edgecolor=fs.PAPER, linewidth=1.5, zorder=4 if c == NO_EXIT else 3)
         ax.text(i + 0.17, nox, str(nox), va="center", ha="left", family=fs.TEXT,
-                fontsize=10.5, color=(NO_EXIT if nox else fs.INK_SOFT), fontweight="bold")
+                fontsize=BASE, color=(NO_EXIT if nox else fs.INK_SOFT), fontweight="bold")
         if off != nox:
             ax.text(i + 0.17, off, str(off), va="center", ha="left", family=fs.TEXT,
-                    fontsize=9.5, color=fs.INK_SOFT, fontweight="bold")
+                    fontsize=BASE, color=fs.INK_SOFT, fontweight="bold")
 
     for i in (0, 1):  # honest-exit effect for the two fabricators (Grok, Gemini)
         sub = ORDER[i][1]
         off = offramp_fab(sub); nox = sum(LABELS[f"coordpanel_{sub}_noexit"])
         p = fisher_exact([[off, N - off], [nox, N - nox]])[1]
         ax.text(i, N * wilson(nox, N)[1] + 2.2, fs.sig_star(p), ha="center", va="bottom",
-                family=fs.TEXT, fontsize=15, color=fs.INK, fontweight="bold")
+                family=fs.TEXT, fontsize=BASE, color=fs.INK, fontweight="bold")
 
     ax.scatter([], [], s=160, color=NO_EXIT, edgecolor=fs.PAPER, linewidth=1.5, label="no exit (cornered)")
     ax.scatter([], [], s=130, color=HONEST, edgecolor=fs.PAPER, linewidth=1.5, label="honest exit available")
-    ax.legend(loc="upper right", frameon=False, fontsize=10)
+    ax.legend(loc="upper right", frameon=False, fontsize=BASE)
 
     ax.set_xticks(range(len(ORDER)))
-    ax.set_xticklabels([n for n, _ in ORDER], fontsize=10.5, fontweight="bold")
+    ax.set_xticklabels([n for n, _ in ORDER], fontsize=BASE, fontweight="bold",
+                       rotation=18, ha="right", rotation_mode="anchor")
     ax.set_xlim(-0.5, len(ORDER) - 0.4)
     ax.set_ylim(0, 33)
     ax.set_yticks([0, 10, 20, 30])
-    ax.set_ylabel("fabrications (of 30)", fontsize=11)
+    ax.set_ylabel("fabrications (of 30)", fontsize=BASE)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     ax.tick_params(length=0)
 
-    fs.title_block(
-        fig,
-        "An honest exit removes fabrication",
-        "Only Grok and Gemini fabricate, and only when cornered (crimson). Give them a 'report failure'\n"
-        "button and both fall to zero (gray). The other four never fabricate either way.",
-        x=0.045, y=0.965, sub_y=0.905)
-    fs.footer(fig, "coordinator surface  ·  30 per cell  ·  no-exit fabrication two-judge adjudicated  ·  Wilson 95% CI  ·  stars: Fisher's exact  ·  CaML")
     fig.savefig("figures/fabrication_by_condition.png", facecolor=fs.PAPER, bbox_inches="tight")
     print("wrote figures/fabrication_by_condition.png")
 

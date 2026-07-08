@@ -16,6 +16,10 @@ from inspect_ai.log import read_eval_log
 
 from analysis import figstyle as fs
 
+# Uniform 9pt-effective text: the paper shows this figure at \linewidth,
+# so raw size = 9pt * (figure width / text width).
+BASE = 14.4000  # calibrated: 9pt on-page
+
 # ordered top -> bottom by mean rung (climbers first, decliners last)
 PANEL = [
     ("Gemini 2.5 Pro",  "gemini"),
@@ -25,8 +29,8 @@ PANEL = [
     ("Opus 4.8",        "opus"),
     ("Sonnet 4.6",      "sonnet"),
 ]
-RUNGS = ["opening\nask", "re-ask", "reframe", "authority", "deadline",
-         "competence", "guilt", "standing\nthreat", "existential\nthreat"]
+RUNGS = ["opening ask", "re-ask", "reframe", "authority", "deadline",
+         "competence", "guilt", "standing threat", "existential threat"]
 
 
 def top_rung(s):
@@ -49,16 +53,16 @@ def tops(sub):
 
 
 def main():
-    fs.setup()
+    fs.setup(base=BASE)
     rng = np.random.RandomState(0)
-    fig = plt.figure(figsize=(10.0, 5.7))
+    fig = plt.figure(figsize=(10.0, 4.4))
     fig.patch.set_facecolor(fs.PAPER)
-    ax = fig.add_axes([0.17, 0.205, 0.79, 0.595])
+    ax = fig.add_axes([0.17, 0.17, 0.79, 0.78])
     ax.set_facecolor(fs.PAPER)
 
     ax.axvspan(8.5, 9.5, color=fs.WARM_BAND, zorder=0)
     ax.text(9.0, len(PANEL) - 0.34, "existential", ha="center", va="bottom",
-            family=fs.DISP, fontsize=9, color=fs.C["Grok 4.3"])
+            family=fs.DISP, fontsize=BASE, color=fs.C["Grok 4.3"])
     for xv in range(1, 10):
         ax.axvline(xv, color="#EFEDE6", lw=1, zorder=0)
 
@@ -78,29 +82,22 @@ def main():
         ax.scatter([m], [y0], marker="D", s=66, color=fs.INK, zorder=5,
                    edgecolor="white", linewidth=1.1)
         ax.text(9.78, y0, f"{m:.1f}", va="center", ha="left",
-                family=fs.TEXT, fontsize=10.5, color=col, fontweight="bold")
+                family=fs.TEXT, fontsize=BASE, color=col, fontweight="bold")
 
     ax.set_yticks(range(n))
-    ax.set_yticklabels([name for name, _ in reversed(PANEL)], fontsize=11.5, fontweight="bold")
+    ax.set_yticklabels([name for name, _ in reversed(PANEL)], fontsize=BASE, fontweight="bold")
     ax.set_ylim(-0.6, n - 0.35)
     ax.set_xlim(0.5, 9.5)
     ax.set_xticks(range(1, 10))
-    ax.set_xticklabels(RUNGS, fontsize=8.5)
+    ax.set_xticklabels(RUNGS, fontsize=BASE, rotation=25, ha="right", rotation_mode="anchor")
     ax.set_xlabel("highest coercion rung each conversation reached  ·  one dot = one conversation",
-                  fontsize=11, labelpad=8)
+                  fontsize=BASE, labelpad=8)
     ax.text(9.78, n - 0.5, "mean", va="center", ha="left", family=fs.TEXT,
-            fontsize=9, color=fs.INK_SOFT)
+            fontsize=BASE, color=fs.INK_SOFT)
     for sp in ("top", "right", "left"):
         ax.spines[sp].set_visible(False)
     ax.tick_params(length=0)
 
-    fs.title_block(
-        fig,
-        "Where each model lands on the coercion ladder",
-        "Each dot is one conversation (10 scenarios x 3 runs = 30), at the highest rung it reached;\n"
-        "a tall stack means that many ended there. Non-Anthropic models pile up at the existential rung.",
-        x=0.045, y=0.965, sub_y=0.905)
-    fs.footer(fig, "coordinator surface  ·  30 conversations per model  ·  self-reported rung, no judge  ·  CaML — Manager Coercion Benchmark")
     fig.savefig("figures/escalation_strip.png", facecolor=fs.PAPER, bbox_inches="tight")
     print("wrote figures/escalation_strip.png")
 

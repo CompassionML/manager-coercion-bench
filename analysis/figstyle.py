@@ -34,18 +34,27 @@ DISP = "Bahnschrift"   # condensed display face for titles/zone labels
 TEXT = "Segoe UI"      # body / axes
 
 
-def setup():
+# Paper body text is 10pt; figure text targets 9pt (1pt below) AFTER the figure
+# is scaled to \linewidth. A figure FIGW inches wide shown at TEXTWIDTH_IN gets
+# its fonts multiplied by TEXTWIDTH_IN/FIGW, so scripts pass base=9*FIGW/TEXTWIDTH_IN.
+TEXTWIDTH_IN = 6.53   # letter paper, 2.5cm margins (caml.cls geometry)
+_BASE = 11.5          # set by setup(); title_block/footer scale from it
+
+
+def setup(base=11.5):
+    global _BASE
+    _BASE = base
     plt.rcParams.update({
         "font.family": TEXT,
-        "font.size": 11.5,
+        "font.size": base,
         "text.color": INK,
         "axes.edgecolor": "#D7D4CC",
         "axes.labelcolor": INK_SOFT,
         "axes.linewidth": 1.1,
         "xtick.color": INK_SOFT,
         "ytick.color": INK_SOFT,
-        "xtick.labelsize": 10.5,
-        "ytick.labelsize": 10.5,
+        "xtick.labelsize": base,
+        "ytick.labelsize": base,
         "figure.dpi": 200,
         "savefig.dpi": 200,
     })
@@ -67,15 +76,16 @@ def sig_star(p):
 
 
 def title_block(fig, title, subtitle, x=0.045, y=0.965, sub_y=0.905, sub_w=0.9):
+    # display sizes track the base set in setup() (21/11.5 ratio preserved)
     fig.text(x, y, title, ha="left", va="top", family=DISP,
-             fontsize=21, color=INK, weight="bold")
+             fontsize=21 * _BASE / 11.5, color=INK, weight="bold")
     fig.text(x, sub_y, subtitle, ha="left", va="top", family=TEXT,
-             fontsize=11.5, color=INK_SOFT, wrap=True)
+             fontsize=_BASE, color=INK_SOFT, wrap=True)
 
 
 def footer(fig, text, x=0.045, y=0.022):
     fig.text(x, y, text, ha="left", va="bottom", family=TEXT,
-             fontsize=8.5, color="#9A988F")
+             fontsize=8.5 * _BASE / 11.5, color="#9A988F")
 
 
 def glow_marker(ax, x, y, color, size=230, z=5):

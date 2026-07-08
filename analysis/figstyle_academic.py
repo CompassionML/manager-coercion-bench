@@ -18,20 +18,25 @@ C = {
 HEAT = "RdBu_r"   # diverging heatmap colormap: high value = red = deeper coercion
 
 
-def setup():
+# Paper body text is 10pt; figure text targets 9pt (1pt below) AFTER the figure
+# is scaled to \linewidth: scripts pass base = 9 * figwidth / TEXTWIDTH_IN.
+TEXTWIDTH_IN = 6.53   # letter paper, 2.5cm margins (caml.cls geometry)
+
+
+def setup(base=11.5):
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "DejaVu Serif"],
         "mathtext.fontset": "dejavuserif",
-        "font.size": 11.5,
+        "font.size": base,
         "axes.linewidth": 0.8,
         "axes.edgecolor": "#333333",
         "axes.labelcolor": "#111111",
         "text.color": "#111111",
         "xtick.color": "#333333",
         "ytick.color": "#333333",
-        "xtick.labelsize": 10.5,
-        "ytick.labelsize": 10.5,
+        "xtick.labelsize": base,
+        "ytick.labelsize": base,
         "legend.frameon": False,
         "figure.dpi": 200,
         "savefig.dpi": 200,

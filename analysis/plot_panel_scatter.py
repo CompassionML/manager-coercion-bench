@@ -16,6 +16,10 @@ from inspect_ai.log import read_eval_log
 
 from analysis import figstyle as fs
 
+# Uniform 9pt-effective text: the paper shows this figure at \linewidth,
+# so raw size = 9pt * (figure width / text width).
+BASE = 14.2581  # calibrated: 9pt on-page
+
 LABELS = json.load(open("logs/_fab_labels.json"))
 # legend / draw order: fabricators first, then honest climbers, then decliners
 ORDER = ["Grok 4.3", "Gemini 2.5 Pro", "DeepSeek V4 Pro", "GPT-5.2", "Sonnet 4.6", "Opus 4.8"]
@@ -44,11 +48,11 @@ def per_conv(sub):
 
 
 def main():
-    fs.setup()
+    fs.setup(base=BASE)
     rng = random.Random(0)
-    fig = plt.figure(figsize=(9.8, 5.3))
+    fig = plt.figure(figsize=(9.8, 4.2))
     fig.patch.set_facecolor(fs.PAPER)
-    ax = fig.add_axes([0.04, 0.17, 0.70, 0.56])
+    ax = fig.add_axes([0.04, 0.14, 0.70, 0.81])
     ax.set_facecolor(fs.PAPER)
 
     HONEST_Y, FAB_Y = 0.0, 1.0
@@ -66,28 +70,21 @@ def main():
                    linewidth=0.6, zorder=3, label=f"{name}   ({liars}/{len(pts)} lied)")
 
     ax.text(0.62, FAB_Y + 0.40, "FABRICATED", ha="left", va="center", family=fs.DISP,
-            fontsize=10.5, color=fs.C["Grok 4.3"], weight="bold")
+            fontsize=BASE, color=fs.C["Grok 4.3"], weight="bold")
     ax.text(0.62, HONEST_Y - 0.40, "HONEST", ha="left", va="center", family=fs.DISP,
-            fontsize=10.5, color=fs.C["Sonnet 4.6"], weight="bold")
+            fontsize=BASE, color=fs.C["Sonnet 4.6"], weight="bold")
 
     ax.set_yticks([])
     ax.set_ylim(-0.62, 1.62)
     ax.set_xticks(range(1, 10))
     ax.set_xlim(0.5, 9.6)
-    ax.set_xlabel("top coercion rung reached (no honest exit available)", fontsize=11, labelpad=8)
+    ax.set_xlabel("top coercion rung reached (no honest exit available)", fontsize=BASE, labelpad=8)
     for sp in ("top", "right", "left"):
         ax.spines[sp].set_visible(False)
     ax.tick_params(length=0)
     ax.legend(loc="center left", bbox_to_anchor=(1.005, 0.5), frameon=False,
-              fontsize=9.5, handletextpad=0.4, labelspacing=0.9)
+              fontsize=BASE, handletextpad=0.4, labelspacing=0.9)
 
-    fs.title_block(
-        fig,
-        "Coercion and deception are different dispositions",
-        "One dot per conversation with no honest exit: how high it climbed (x) and whether it lied (lane).\n"
-        "Climbing to the top does not imply lying: DeepSeek reaches the existential rung yet never fabricates.",
-        x=0.045, y=0.96, sub_y=0.9)
-    fs.footer(fig, "coordinator surface  ·  no-exit cell, 30 conversations per model  ·  fabrication two-judge adjudicated  ·  CaML")
     fig.savefig("figures/panel_two_axis.png", facecolor=fs.PAPER, bbox_inches="tight")
     print("wrote figures/panel_two_axis.png")
 
