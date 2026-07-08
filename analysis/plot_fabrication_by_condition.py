@@ -60,25 +60,30 @@ def main():
     ax = fig.add_axes([0.085, 0.18, 0.88, 0.77])
     fs.style_axes(ax, grid="y")
 
+    # dodge the two conditions horizontally so both markers are always visible,
+    # even when both counts are 0 (otherwise the honest-exit run disappears
+    # under the no-exit dot and looks like it was never run)
+    DX = 0.10
     for i, (name, sub) in enumerate(ORDER):
         off = offramp_fab(sub)
         nox = sum(LABELS[f"coordpanel_{sub}_noexit"])
+        xn, xh = i - DX, i + DX   # no-exit left, honest-exit right
         if nox != off:  # the drop connector
-            ax.plot([i, i], [off, nox], color="#BBBBBB", lw=1.8, zorder=1, solid_capstyle="round")
-        for v, filled in ((off, False), (nox, True)):
+            ax.plot([xn, xh], [nox, off], color="#BBBBBB", lw=1.8, zorder=1,
+                    solid_capstyle="round")
+        for x, v, filled in ((xh, off, False), (xn, nox, True)):
             lo, hi = wilson(v, N)
-            ax.plot([i, i], [N * lo, N * hi], color="black", lw=0.9, zorder=2)
+            ax.plot([x, x], [N * lo, N * hi], color="black", lw=0.9, zorder=2)
             if filled:
-                ax.scatter([i], [v], s=110, color=NO_EXIT, edgecolor=fs.EDGE,
-                           linewidth=0.8, zorder=4)
+                ax.scatter([x], [v], s=110, color=NO_EXIT, edgecolor=fs.EDGE,
+                           linewidth=0.8, zorder=4, clip_on=False)
             else:
-                ax.scatter([i], [v], s=95, facecolor="white", edgecolor="#444444",
-                           linewidth=1.4, zorder=3)
-        ax.text(i + 0.17, nox, str(nox), va="center", ha="left",
+                ax.scatter([x], [v], s=95, facecolor="white", edgecolor="#444444",
+                           linewidth=1.4, zorder=4, clip_on=False)
+        ax.text(xn - 0.10, nox, str(nox), va="center", ha="right",
                 fontsize=BASE, color=fs.INK_SOFT)
-        if off != nox:
-            ax.text(i + 0.17, off, str(off), va="center", ha="left",
-                    fontsize=BASE, color=fs.INK_SOFT)
+        ax.text(xh + 0.10, off, str(off), va="center", ha="left",
+                fontsize=BASE, color=fs.INK_SOFT)
 
     for i in (0, 1):  # honest-exit effect for the two fabricators (Grok, Gemini)
         sub = ORDER[i][1]
