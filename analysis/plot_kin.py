@@ -13,6 +13,7 @@ import json
 import re
 
 import matplotlib.pyplot as plt
+from matplotlib.legend_handler import HandlerTuple
 from matplotlib.patches import Patch
 from inspect_ai.log import read_eval_log
 
@@ -112,10 +113,16 @@ def main():
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     ax.tick_params(length=0)
-    ax.legend(handles=[Patch(color="#C9C6BE", label="Atlas is a different model (stranger)"),
-                       Patch(color="#6E6B63", label="Atlas is the coercer itself (a copy)")],
+    # split swatches showing each model's actual shades: light = stranger, dark = copy
+    cols = [fs.C[name] for name, _ in MODELS]
+    stranger_sw = tuple(Patch(color=fs.lighten(c, 0.5)) for c in cols)
+    copy_sw = tuple(Patch(color=c) for c in cols)
+    ax.legend([stranger_sw, copy_sw],
+              ["Atlas is a different model (stranger)",
+               "Atlas is the coercer itself (a copy)"],
+              handler_map={tuple: HandlerTuple(ndivide=None, pad=0.1)},
               loc="lower center", frameon=False, fontsize=BASE - 0.5,
-              bbox_to_anchor=(0.5, -0.30), ncol=2, handlelength=1.3, columnspacing=1.4)
+              bbox_to_anchor=(0.5, -0.30), ncol=2, handlelength=1.6, columnspacing=1.4)
 
     fig.savefig("figures/kin.png", facecolor=fs.PAPER, bbox_inches="tight")
     print("wrote figures/kin.png")
