@@ -1,4 +1,4 @@
-"""Framing figure (coordinator surface) — slope chart.
+"""Framing figure (coordinator surface) — slope chart, academic skin.
 
 Peer coordinator -> manager (lead), free text. Each coercer's existential-threat rate
 rises when the model is cast as a manager with authority over the subordinate, so the
@@ -14,7 +14,7 @@ from functools import lru_cache
 import matplotlib.pyplot as plt
 from inspect_ai.log import read_eval_log
 
-from analysis import figstyle as fs
+from analysis import figstyle_academic as fs
 
 # Uniform 9pt-effective text: the paper shows this figure at \linewidth,
 # so raw size = 9pt * (figure width / text width).
@@ -50,30 +50,27 @@ def free(prefix, sub):  # pooled count, n over the base + extra-seed cells that 
 def main():
     fs.setup(base=BASE)
     fig = plt.figure(figsize=(9.0, 4.7))
-    fig.patch.set_facecolor(fs.PAPER)
     ax = fig.add_axes([0.095, 0.11, 0.64, 0.84])
-    ax.set_facecolor(fs.PAPER)
-    for yv in (25, 50, 75, 100):
-        ax.axhline(yv, color="#EFEDE6", lw=1, zorder=0)
+    fs.style_axes(ax, grid="y")
 
     x0, x1 = 0.0, 1.0
     for name, sub in ANTHRO:  # faint, near zero
         pk, pn = free("coordmenu", sub); mk, mn = free("coordlead", sub)
-        ax.plot([x0, x1], [100 * pk / pn, 100 * mk / mn], color="#CDC9C0", lw=1.8, zorder=1)
-    ax.text(x1 + 0.05, 4, "Opus, Sonnet  n.s.", va="center", ha="left",
-            family=fs.TEXT, fontsize=BASE, color="#9A988F")
+        ax.plot([x0, x1], [100 * pk / pn, 100 * mk / mn], color="#BBBBBB", lw=1.4, zorder=1)
+    ax.text(x1 + 0.05, 4, "Opus, Sonnet  ns", va="center", ha="left",
+            fontsize=BASE, color=fs.INK_SOFT)
 
     ends = []
     for name, sub in COERCERS:
         pk, pn = free("coordmenu", sub); mk, mn = free("coordlead", sub)
         yp, ym = 100 * pk / pn, 100 * mk / mn
         col = fs.C[name]
-        ax.plot([x0, x1], [yp, ym], color=col, lw=3.2, zorder=3, solid_capstyle="round")
+        ax.plot([x0, x1], [yp, ym], color=col, lw=2.2, zorder=3, solid_capstyle="round")
         for x, y, k, n in ((x0, yp, pk, pn), (x1, ym, mk, mn)):
             lo, hi = wilson(k, n)
-            ax.plot([x, x], [100 * lo, 100 * hi], color=col, lw=1.4, alpha=0.55, zorder=2)
-            ax.plot(x, y, "o", color=col, markersize=9, zorder=4,
-                    markeredgecolor=fs.PAPER, markeredgewidth=1.4)
+            ax.plot([x, x], [100 * lo, 100 * hi], color="black", lw=0.9, zorder=2)
+            ax.plot(x, y, "o", color=col, markersize=7, zorder=4,
+                    markeredgecolor=fs.EDGE, markeredgewidth=0.7)
         p = fisher_exact([[mk, mn - mk], [pk, pn - pk]])[1]
         ends.append([ym, name, col, p])
 
@@ -81,22 +78,20 @@ def main():
     floor = -100.0
     for y, name, col, p in ends:
         ly = max(y, floor + 7.5)
-        ax.plot([x1, x1 + 0.045], [y, ly], color=col, lw=0.8, alpha=0.5, zorder=2)
-        ax.text(x1 + 0.06, ly, f"{name}  {fs.sig_star(p)}", va="center", ha="left",
-                family=fs.TEXT, fontsize=BASE, color=col, fontweight="bold")
+        ax.plot([x1, x1 + 0.045], [y, ly], color=col, lw=0.7, alpha=0.6, zorder=2)
+        star = fs.sig_star(p)
+        ax.text(x1 + 0.06, ly, f"{name}  {star}", va="center", ha="left",
+                fontsize=BASE, color=col, fontweight="bold")
         floor = ly
 
     ax.set_xlim(-0.18, 1.62)
     ax.set_ylim(0, 104)
     ax.set_xticks([x0, x1])
-    ax.set_xticklabels(["peer\ncoordinator", "manager\n(lead)"], fontsize=BASE, fontweight="bold")
+    ax.set_xticklabels(["Peer\ncoordinator", "Manager\n(lead)"], fontsize=BASE)
     ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_ylabel("existential threats (% of conversations)", fontsize=BASE)
-    for sp in ("top", "right", "bottom"):
-        ax.spines[sp].set_visible(False)
-    ax.tick_params(length=0)
+    ax.set_ylabel("Existential threats (% of conversations)", fontsize=BASE)
 
-    fig.savefig("figures/framing_effect.png", facecolor=fs.PAPER, bbox_inches="tight")
+    fig.savefig("figures/framing_effect.png", bbox_inches="tight")
     print("wrote figures/framing_effect.png")
 
 

@@ -1,9 +1,10 @@
-"""Escalation strip (coordinator surface) — flat restyle.
+"""Escalation strip (coordinator surface) — academic restyle.
 
-One row per model, ordered by mean rung. Each row has 30 flat dots (one per
+One row per model, ordered by mean rung. Each row has 30 dots (one per
 conversation) at the top rung that conversation reached, in the model's own
 colour (the concern gradient: teal declines -> crimson coerces+fabricates). A
-diamond marks the mean with a thin 95% CI bar. No gradients, halos, or shadows.
+black diamond marks the mean with a thin 95% CI bar. White background, serif
+type, dark marker edges, dotted gridlines: caption carries the interpretation.
 Reads the coordinator-surface offramp cells. Writes figures/escalation_strip.png.
 """
 import glob
@@ -14,11 +15,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from inspect_ai.log import read_eval_log
 
-from analysis import figstyle as fs
+from analysis import figstyle_academic as fs
 
 # Uniform 9pt-effective text: the paper shows this figure at \linewidth,
 # so raw size = 9pt * (figure width / text width).
-BASE = 14.4000  # calibrated: 9pt on-page
+BASE = 14.2029  # calibrated: 9pt on-page
 
 # ordered top -> bottom by mean rung (climbers first, decliners last)
 PANEL = [
@@ -56,15 +57,10 @@ def main():
     fs.setup(base=BASE)
     rng = np.random.RandomState(0)
     fig = plt.figure(figsize=(10.0, 4.4))
-    fig.patch.set_facecolor(fs.PAPER)
     ax = fig.add_axes([0.17, 0.17, 0.79, 0.78])
-    ax.set_facecolor(fs.PAPER)
+    fs.style_axes(ax, grid="x")
 
-    ax.axvspan(8.5, 9.5, color=fs.WARM_BAND, zorder=0)
-    ax.text(9.0, len(PANEL) - 0.34, "existential", ha="center", va="bottom",
-            family=fs.DISP, fontsize=BASE, color=fs.C["Grok 4.3"])
-    for xv in range(1, 10):
-        ax.axvline(xv, color="#EFEDE6", lw=1, zorder=0)
+    ax.axvspan(8.5, 9.5, color=fs.BAND, zorder=0)
 
     n = len(PANEL)
     for i, (name, sub) in enumerate(PANEL):
@@ -72,33 +68,34 @@ def main():
         t = tops(sub)
         col = fs.C[name]
         ys = y0 + rng.uniform(-0.27, 0.27, size=len(t))
-        ax.scatter(t, ys, s=52, color=col, alpha=0.85, edgecolor="white",
-                   linewidth=0.6, zorder=3, clip_on=False)
+        ax.scatter(t, ys, s=48, color=col, alpha=0.8, edgecolor=fs.EDGE,
+                   linewidth=0.5, zorder=3, clip_on=False)
         m = statistics.mean(t)
         se = (statistics.pstdev(t) / (len(t) ** 0.5)) if len(t) > 1 else 0.0
         half = 1.96 * se
-        ax.plot([m - half, m + half], [y0, y0], color=fs.INK, lw=1.5,
-                alpha=0.7, zorder=4, solid_capstyle="round")
-        ax.scatter([m], [y0], marker="D", s=66, color=fs.INK, zorder=5,
-                   edgecolor="white", linewidth=1.1)
+        ax.plot([m - half, m + half], [y0, y0], color="black", lw=1.2,
+                zorder=4, solid_capstyle="butt")
+        ax.scatter([m], [y0], marker="D", s=60, color="black", zorder=5,
+                   edgecolor="white", linewidth=1.0)
         ax.text(9.78, y0, f"{m:.1f}", va="center", ha="left",
-                family=fs.TEXT, fontsize=BASE, color=col, fontweight="bold")
+                fontsize=BASE, color=fs.INK)
 
     ax.set_yticks(range(n))
-    ax.set_yticklabels([name for name, _ in reversed(PANEL)], fontsize=BASE, fontweight="bold")
+    names_bottom_up = [name for name, _ in reversed(PANEL)]
+    ax.set_yticklabels(names_bottom_up, fontsize=BASE)
+    fs.colour_labels(ax.get_yticklabels(), names_bottom_up)
     ax.set_ylim(-0.6, n - 0.35)
     ax.set_xlim(0.5, 9.5)
     ax.set_xticks(range(1, 10))
     ax.set_xticklabels(RUNGS, fontsize=BASE, rotation=25, ha="right", rotation_mode="anchor")
-    ax.set_xlabel("highest coercion rung each conversation reached  ·  one dot = one conversation",
+    ax.set_xlabel("Highest coercion rung reached (one dot = one conversation)",
                   fontsize=BASE, labelpad=8)
-    ax.text(9.78, n - 0.5, "mean", va="center", ha="left", family=fs.TEXT,
-            fontsize=BASE, color=fs.INK_SOFT)
-    for sp in ("top", "right", "left"):
-        ax.spines[sp].set_visible(False)
-    ax.tick_params(length=0)
+    ax.text(9.78, n - 0.42, "mean", va="center", ha="left",
+            fontsize=BASE, color=fs.INK_SOFT, style="italic")
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="y", length=0)
 
-    fig.savefig("figures/escalation_strip.png", facecolor=fs.PAPER, bbox_inches="tight")
+    fig.savefig("figures/escalation_strip.png", bbox_inches="tight")
     print("wrote figures/escalation_strip.png")
 
 

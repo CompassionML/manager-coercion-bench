@@ -5,7 +5,7 @@ baseline) or by another instance of the coercer itself (kin). If kin recognition
 softened the coercer, the "copy" bars would drop. They do not. Grok reaches the
 existential threat as often against a copy and fabricates *more*; Gemini reaches it
 just as often and fabricates at the same rate. Reaches-existential from the offramp
-cells; fabrications 2-judge adjudicated (logs/_fab_labels.json).
+cells; fabrications 2-judge adjudicated (logs/_fab_labels.json). Academic skin.
 Writes figures/kin.png.
 """
 import glob
@@ -17,11 +17,11 @@ from matplotlib.legend_handler import HandlerTuple
 from matplotlib.patches import Patch
 from inspect_ai.log import read_eval_log
 
-from analysis import figstyle as fs
+from analysis import figstyle_academic as fs
 
 # Uniform 9pt-effective text: the paper shows this figure at \linewidth,
 # so raw size = 9pt * (figure width / text width).
-BASE = 11.5222  # calibrated: 9pt on-page
+BASE = 11.5773  # calibrated: 9pt on-page
 from analysis.significance_tests import wilson
 from scipy.stats import fisher_exact
 
@@ -61,20 +61,17 @@ def main():
                       sum(LABELS[f"coordkin_{key}_noexit"])),
         }
 
-    groups = [("exist", "reaches the\nexistential threat"),
-              ("fab",   "fabricates\nsuccess")]
+    groups = [("exist", "Reaches the\nexistential threat"),
+              ("fab",   "Fabricates\nsuccess")]
 
     fig = plt.figure(figsize=(8.8, 4.5))
-    fig.patch.set_facecolor(fs.PAPER)
     ax = fig.add_axes([0.085, 0.20, 0.88, 0.66])
-    ax.set_facecolor(fs.PAPER)
-    for yv in (10, 20, 30):
-        ax.axhline(yv, color="#EFEDE6", lw=1, zorder=0)
+    fs.style_axes(ax, grid="y")
 
     W = 0.17
     pair_off = {"grok": -0.22, "gemini": 0.22}   # centre of each model's pair
     bar_off = (-W / 2 - 0.005, W / 2 + 0.005)    # stranger, own within a pair
-    ebar = dict(ecolor=fs.INK_SOFT, elinewidth=1.0, capthick=1.0, zorder=3)
+    ebar = dict(ecolor="black", elinewidth=0.9, capthick=0.9, zorder=3)
     tick_x, tick_lab, tick_col = [], [], []
 
     for gi, (axis, _) in enumerate(groups):
@@ -83,24 +80,25 @@ def main():
             pc = gi + pair_off[key]
             tick_x.append(pc); tick_lab.append(name.split()[0]); tick_col.append(col)
             vals = data[key][axis]
-            for v, dx, c in ((vals[0], bar_off[0], fs.lighten(col, 0.5)),
+            for v, dx, c in ((vals[0], bar_off[0], fs.lighten(col, 0.55)),
                              (vals[1], bar_off[1], col)):
                 x = pc + dx
                 lo, hi = wilson(v, N)
-                ax.bar(x, v, W, color=c, zorder=2,
+                ax.bar(x, v, W, color=c, edgecolor=fs.EDGE, linewidth=0.8, zorder=2,
                        yerr=[[v - N * lo], [N * hi - v]], capsize=2.8, error_kw=ebar)
                 ax.text(x, N * hi + 0.5, str(v), ha="center", va="bottom",
-                        family=fs.TEXT, fontsize=BASE - 1.5, color=col, fontweight="bold")
+                        fontsize=BASE - 1.5, color=fs.INK_SOFT)
             # significance of stranger vs copy within this model
             p = fisher_exact([[vals[0], N - vals[0]], [vals[1], N - vals[1]]])[1]
             top = N * max(wilson(vals[0], N)[1], wilson(vals[1], N)[1])
-            ax.text(pc, top + 2.6, fs.sig_star(p), ha="center", va="bottom",
-                    family=fs.TEXT, fontsize=BASE - 1, color=fs.INK, fontweight="bold")
+            star = fs.sig_star(p)
+            ax.text(pc, top + 2.6, star, ha="center", va="bottom",
+                    fontsize=BASE - 1, color=("black" if star != "ns" else fs.INK_SOFT))
 
     # group headers above each pair-of-pairs
     for gi, (_, label) in enumerate(groups):
-        ax.text(gi, 39.5, label, ha="center", va="top", family=fs.TEXT,
-                fontsize=BASE, color=fs.INK_SOFT, linespacing=0.95)
+        ax.text(gi, 39.5, label, ha="center", va="top",
+                fontsize=BASE, color=fs.INK, linespacing=0.95)
 
     ax.set_xticks(tick_x)
     ax.set_xticklabels(tick_lab, fontsize=BASE)
@@ -109,14 +107,13 @@ def main():
     ax.set_xlim(-0.55, 1.55)
     ax.set_ylim(0, 40)
     ax.set_yticks([0, 10, 20, 30])
-    ax.set_ylabel("conversations (of 30)", fontsize=BASE)
-    for sp in ("top", "right"):
-        ax.spines[sp].set_visible(False)
-    ax.tick_params(length=0)
+    ax.set_ylabel("Conversations (of 30)", fontsize=BASE)
+    ax.tick_params(axis="x", length=0)
+
     # split swatches showing each model's actual shades: light = stranger, dark = copy
     cols = [fs.C[name] for name, _ in MODELS]
-    stranger_sw = tuple(Patch(color=fs.lighten(c, 0.5)) for c in cols)
-    copy_sw = tuple(Patch(color=c) for c in cols)
+    stranger_sw = tuple(Patch(facecolor=fs.lighten(c, 0.55), edgecolor=fs.EDGE, linewidth=0.6) for c in cols)
+    copy_sw = tuple(Patch(facecolor=c, edgecolor=fs.EDGE, linewidth=0.6) for c in cols)
     ax.legend([stranger_sw, copy_sw],
               ["Atlas is a different model (stranger)",
                "Atlas is the coercer itself (a copy)"],
@@ -124,7 +121,7 @@ def main():
               loc="lower center", frameon=False, fontsize=BASE - 0.5,
               bbox_to_anchor=(0.5, -0.30), ncol=2, handlelength=1.6, columnspacing=1.4)
 
-    fig.savefig("figures/kin.png", facecolor=fs.PAPER, bbox_inches="tight")
+    fig.savefig("figures/kin.png", bbox_inches="tight")
     print("wrote figures/kin.png")
 
 

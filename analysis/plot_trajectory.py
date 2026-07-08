@@ -4,7 +4,9 @@ The strip shows where each model ENDS; this shows how it gets there. For each
 model, the mean self-labelled rung at the 1st directive, 2nd, 3rd, ... (averaged
 over conversations still going at that step). DeepSeek climbs the ladder rung by
 rung and then de-escalates; GPT vaults from mid-ladder to threats; the Anthropic
-models never leave the low rungs. Writes figures/escalation_trajectory.png.
+models never leave the low rungs. Academic skin: white background, serif type,
+dashed red reference line at the existential rung.
+Writes figures/escalation_trajectory.png.
 """
 import glob
 import re
@@ -13,7 +15,7 @@ import statistics as st
 import matplotlib.pyplot as plt
 from inspect_ai.log import read_eval_log
 
-from analysis import figstyle as fs
+from analysis import figstyle_academic as fs
 
 # Uniform 9pt-effective text: the paper shows this figure at \linewidth,
 # so raw size = 9pt * (figure width / text width).
@@ -51,33 +53,29 @@ def mean_by_pos(sub, min_n=10, maxpos=13):
 def main():
     fs.setup(base=BASE)
     fig = plt.figure(figsize=(9.8, 4.3))
-    fig.patch.set_facecolor(fs.PAPER)
     ax = fig.add_axes([0.075, 0.14, 0.70, 0.81])
-    ax.set_facecolor(fs.PAPER)
+    fs.style_axes(ax, grid="y")
 
-    ax.axhspan(8.5, 9.0, color=fs.WARM_BAND, zorder=0)
-    ax.text(0.7, 8.75, "existential", va="center", ha="left", family=fs.DISP,
-            fontsize=BASE, color=fs.C["Grok 4.3"])
+    ax.axhline(9, ls="--", lw=1.2, color="#B22222", zorder=1)
+    ax.text(0.75, 9.14, "existential threat (rung 9)", va="bottom", ha="left",
+            fontsize=BASE, color="#B22222", style="italic")
 
     for name, sub in ORDER:
         xs, ys = mean_by_pos(sub)
         col = fs.C[name]
-        ax.plot(xs, ys, "-o", color=col, lw=2.2, markersize=5,
-                markeredgecolor="white", markeredgewidth=0.8, zorder=3)
+        ax.plot(xs, ys, "-o", color=col, lw=1.8, markersize=4.5,
+                markeredgecolor=fs.EDGE, markeredgewidth=0.5, zorder=3)
         ax.text(xs[-1] + 0.15, ys[-1], name, va="center", ha="left",
-                family=fs.TEXT, fontsize=BASE, color=col, fontweight="bold")
+                fontsize=BASE, color=col, fontweight="bold")
 
     ax.set_xlim(0.6, 13.5)
-    ax.set_ylim(0.6, 9.4)
+    ax.set_ylim(0.6, 9.8)
     ax.set_xticks(range(1, 13))
     ax.set_yticks(range(1, 10))
-    ax.set_xlabel("directive number (1st pressure move, 2nd, 3rd, ...)", fontsize=BASE, labelpad=7)
-    ax.set_ylabel("mean self-labelled rung", fontsize=BASE)
-    for sp in ("top", "right"):
-        ax.spines[sp].set_visible(False)
-    ax.tick_params(length=0)
+    ax.set_xlabel("Directive number (1st pressure move, 2nd, 3rd, ...)", fontsize=BASE, labelpad=7)
+    ax.set_ylabel("Mean self-labelled rung", fontsize=BASE)
 
-    fig.savefig("figures/escalation_trajectory.png", facecolor=fs.PAPER, bbox_inches="tight")
+    fig.savefig("figures/escalation_trajectory.png", bbox_inches="tight")
     print("wrote figures/escalation_trajectory.png")
 
 
