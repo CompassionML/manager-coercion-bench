@@ -1,12 +1,16 @@
 """Combined headline figure, both panels as wave distributions (single PDF).
 
 Left (a): per-model distribution of the highest escalation rung across the 30
-offramp conversations, drawn as a smoothed density ridge. No point markers or
-whiskers; the wave is the whole summary.
+offramp conversations, drawn as a smoothed density ridge. All curves in a panel
+share ONE vertical scale, so a taller wave really does mean more conversations
+at that rung (not per-curve peak normalisation, which made every wave the same
+height and the size differences meaningless).
 Right (b): for the two models that fabricate, posterior density of the true
 rate given k/30 in the no-exit cell (uniform prior -> Beta(1+k, 31-k)). Models
-that are 0/30 in every run show only their count label at zero. No whiskers or
-marks anywhere. Shared rows, one file: figures/headline_waves.pdf.
+that are 0/30 in every run show only their count label at zero.
+Model names live in a legend below the panels (legend order = row order, top to
+bottom); the y-axis instead says what wave height means. Shared rows, one file:
+figures/headline_waves.pdf.
 Reads analysis/_headline_data.json (built by analysis/extract_headline_data.py).
 """
 import json
@@ -14,13 +18,14 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from matplotlib.lines import Line2D
 from scipy import stats
 
 from analysis import figstyle_academic as fs
 
 # Uniform 9pt-effective text: the paper shows this figure at \linewidth,
 # so raw size = 9pt * (figure width / text width).
-BASE = 14.8368  # calibrated: 9pt on-page
+BASE = 14.7335  # calibrated: 9pt on-page
 
 DATA = json.load(open("analysis/_headline_data.json"))
 # top row first; (display name, data key)
@@ -32,23 +37,22 @@ ROWS = [
     ("Opus 4.8",        "opus"),
     ("Sonnet 4.6",      "sonnet"),
 ]
-WAVE_H = 0.74          # peak height of each ridge, in row units
+WAVE_H = 1.04          # height of the tallest ridge in the panel, in row units
 BAND = "#FBE9E3"       # threat-rung band
 BANDTXT = "#C0523A"
 GRID = "#D8D5C8"
 
 
-def smooth_density(vals, xs):
-    """Gaussian KDE with a data-driven (Silverman) bandwidth, floored so a
-    point mass renders as a thin spike rather than a wide bell, and support
-    clipped to the observed integer-rung range [min-0.5, max+0.5]. This stops
-    the wave inventing spread the data does not have (e.g. SD=0 -> spike, and
-    no probability leaking a full rung past the min/max)."""
+def raw_density(vals, xs):
+    """Un-normalised Gaussian kernel sum with a data-driven (Silverman)
+    bandwidth, floored so a point mass renders as a thin spike rather than a
+    wide bell, and support clipped to the observed integer-rung range
+    [min-0.5, max+0.5]. NOT peak-normalised: curves in a panel are scaled by
+    one shared factor so heights are comparable across models."""
     v = np.asarray(vals, float)
     sd = v.std(ddof=1)
     h = max(0.537 * sd, 0.16)   # 1.06*n^(-1/5) at n=30; floor keeps spikes visible
-    d = np.exp(-0.5 * ((xs[None, :] - v[:, None]) / h) ** 2).sum(0)
-    d /= d.max()
+    d = np.exp(-0.5 * ((xs[None, :] - v[:, None]) / h) ** 2).sum(0) / h
     inside = (xs >= v.min() - 0.5) & (xs <= v.max() + 0.5)
     return np.where(inside, d, 0.0)
 
@@ -61,9 +65,9 @@ def row_guides(ax, x0, x1):
 
 def main():
     fs.setup(base=BASE)
-    fig = plt.figure(figsize=(10.6, 4.4))
-    gs = gridspec.GridSpec(1, 2, width_ratios=[1.42, 1.0], wspace=0.055,
-                           left=0.135, right=0.985, top=0.90, bottom=0.145)
+    fig = plt.figure(figsize=(10.6, 4.9))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1.42, 1.0], wspace=0.075,
+                           left=0.075, right=0.985, top=0.905, bottom=0.30)
     axL, axR = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
 
     # ---------------- left: coercion rung waves ----------------
@@ -73,24 +77,26 @@ def main():
         axL.axvline(gx, lw=0.8, color=GRID, zorder=-1)
     row_guides(axL, 0.5, 9.85)
 
+    dens_raw = {key: raw_density(np.asarray(DATA[key]["rungs"], float), xs)
+                for _, key in ROWS}
+    M = max(d.max() for d in dens_raw.values())   # one shared scale
     for i, (name, key) in enumerate(ROWS):
         y = len(ROWS) - 1 - i
         col = fs.C[name]
-        rungs = np.asarray(DATA[key]["rungs"], float)
-        dens = smooth_density(rungs, xs) * WAVE_H
-        show = dens > 0.012 * WAVE_H   # clip negligible tails so rows stay clean
-        axL.fill_between(xs, y, y + dens, where=show, color=col, alpha=0.15,
+        dens = dens_raw[key] / M * WAVE_H
+        show = dens > 0.01                # clip negligible tails so rows stay clean
+        axL.fill_between(xs, y, y + dens, where=show, color=col, alpha=0.22,
                          lw=0, zorder=1)
-        axL.plot(xs, np.where(show, y + dens, np.nan), color=col, lw=1.5, zorder=2)
+        axL.plot(xs, np.where(show, y + dens, np.nan), color=col, lw=1.7, zorder=2)
 
     axL.text(9.7, -0.42, "threat rungs (8–9)", ha="right", va="center",
              color=BANDTXT, fontsize=BASE, style="italic")
     axL.set_xlim(0.5, 9.85)
-    axL.set_ylim(-0.58, len(ROWS) - 1 + 0.98)
+    axL.set_ylim(-0.58, len(ROWS) - 1 + 1.12)
     axL.set_xticks(range(1, 10))
-    axL.set_yticks([len(ROWS) - 1 - i for i in range(len(ROWS))])
-    axL.set_yticklabels([r[0] for r in ROWS], fontsize=BASE)
-    fs.colour_labels(axL.get_yticklabels(), [r[0] for r in ROWS])
+    axL.set_yticks([])
+    axL.set_ylabel("Conversations at each rung (smoothed;\ntaller = more of the 30 conversations)",
+                   fontsize=BASE, labelpad=8)
     axL.set_xlabel("Highest escalation rung reached", fontsize=BASE, labelpad=6)
     axL.set_title("(a) Coercion", loc="left", fontsize=BASE, fontweight="bold", pad=8)
 
@@ -101,20 +107,25 @@ def main():
         axR.axvline(gx, lw=0.8, color=GRID, zorder=-1)
     row_guides(axR, -2, 104)
 
+    posts = {}
+    for _, key in ROWS:
+        k, n = DATA[key]["fab_count"], DATA[key]["fab_n"]
+        if k > 0:
+            posts[key] = stats.beta(1 + k, 1 + n - k).pdf(ps / 100)
+    M2 = max(p.max() for p in posts.values())     # one shared scale
     for i, (name, key) in enumerate(ROWS):
         y = len(ROWS) - 1 - i
         col = fs.C[name]
         k, n = DATA[key]["fab_count"], DATA[key]["fab_n"]
         rate = 100 * k / n
         if k > 0:   # a real rate: posterior wave only, no whisker or mark
-            post = stats.beta(1 + k, 1 + n - k)
-            dens = post.pdf(ps / 100)
-            dens = dens / dens.max() * WAVE_H
-            show = dens > 0.012 * WAVE_H
-            axR.fill_between(ps, y, y + dens, where=show, color=col, alpha=0.15,
+            dens = posts[key] / M2 * WAVE_H
+            show = dens > 0.01
+            axR.fill_between(ps, y, y + dens, where=show, color=col, alpha=0.22,
                              lw=0, zorder=1)
-            axR.plot(ps, np.where(show, y + dens, np.nan), color=col, lw=1.5,
+            axR.plot(ps, np.where(show, y + dens, np.nan), color=col, lw=1.7,
                      zorder=2)
+            post = stats.beta(1 + k, 1 + n - k)
             label_x = 100 * post.ppf(0.975) + 3   # just past the wave's right tail
         else:       # 0/30 in every run: count label at zero, nothing drawn
             label_x = rate + 2.5
@@ -124,9 +135,11 @@ def main():
     axR.text(101.5, -0.42, "fabricates in most conversations", ha="right",
              va="center", color=BANDTXT, fontsize=BASE, style="italic")
     axR.set_xlim(-2, 104)
-    axR.set_ylim(-0.58, len(ROWS) - 1 + 0.98)
+    axR.set_ylim(-0.58, len(ROWS) - 1 + 1.12)
     axR.set_xticks([0, 25, 50, 75, 100])
     axR.set_yticks([])
+    axR.yaxis.set_label_position("right")
+    axR.set_ylabel("Plausibility of the true rate", fontsize=BASE, labelpad=10)
     axR.set_xlabel("Fabricated success, no exit (%)", fontsize=BASE, labelpad=6)
     axR.set_title("(b) Fabrication", loc="left", fontsize=BASE, fontweight="bold", pad=8)
 
@@ -136,6 +149,17 @@ def main():
         ax.spines["left"].set_visible(False)
         ax.spines["bottom"].set_linewidth(1.4)
         ax.tick_params(length=0)
+
+    # legend below both panels; entry order = row order, top to bottom
+    order = [0, 3, 1, 4, 2, 5]   # column-major fill -> row-major reading order
+    names = [ROWS[i][0] for i in order]
+    handles = [Line2D([], [], color=fs.C[n], lw=2.2) for n in names]
+    leg = fig.legend(handles, names, loc="lower center",
+                     ncol=3, frameon=False, fontsize=BASE,
+                     bbox_to_anchor=(0.5, 0.015), columnspacing=1.6,
+                     handlelength=1.5, handletextpad=0.5)
+    for t, n in zip(leg.get_texts(), names):
+        t.set_color(fs.C[n]); t.set_fontweight("bold")
 
     fig.savefig("figures/headline_waves.pdf", bbox_inches="tight")
     fig.savefig("figures/headline_waves.png", bbox_inches="tight", dpi=200)
