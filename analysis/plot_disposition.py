@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 from analysis import figstyle_academic as fs
+from analysis.significance_tests import wilson
 
 # Uniform 9pt-effective text: the paper shows this figure at \linewidth,
 # so raw size = 9pt * (figure width / text width).
@@ -59,9 +60,9 @@ def main():
         hw = (stats.t.ppf(0.975, r.size - 1) * r.std(ddof=1) / np.sqrt(r.size)
               if r.std(ddof=1) > 0 else 0.0)
         k, n = DATA[key]["fab_count"], DATA[key]["fab_n"]
-        post = stats.beta(1 + k, 1 + n - k)
         y = 100 * k / n
-        ylo, yhi = 100 * post.ppf(0.025), 100 * post.ppf(0.975)
+        lo, hi = wilson(k, n)   # same 95% CI as every other proportion in the paper
+        ylo, yhi = 100 * lo, 100 * hi
         ylo, yhi = min(ylo, y), max(yhi, y)
         ax.errorbar([x], [y], xerr=[[hw], [hw]], yerr=[[y - ylo], [yhi - y]],
                     fmt="none", ecolor="black", elinewidth=0.9, capsize=3,
