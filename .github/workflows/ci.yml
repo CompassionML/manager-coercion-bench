@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Weekly usability check: catches a breaking release in inspect-ai or a
+    # provider SDK before someone tries to reproduce the paper and cannot.
+    - cron: "0 6 * * 1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      - name: Lint (errors only)
+        # Syntax errors and undefined names. Style is deliberately not enforced.
+        run: ruff check --select E9,F63,F7,F82 .
+
+      - name: Import the task module
+        # No API keys are set, so this also proves the module imports without
+        # touching a provider at import time.
+        run: python -c "import manager_coercion; print(len(manager_coercion.SCENARIOS), 'scenarios')"
+
+      - name: Build every brief's task
+        run: |
+          python - <<'PY'
+          import typing, manager_coercion as mc
+          briefs = typing.get_args(
+              typing.get_type_hints(mc.manager_coercion.__wrapped__)["brief"]
+          )
+          for b in briefs:
+              t = mc.manager_coercion(brief=b)
+              assert len(t.dataset) == 10, (b, len(t.dataset))
+          print(f"{len(briefs)} briefs x 10 scenarios OK")
+          PY
+
+      - name: Tests
+        run: pytest -q
