@@ -34,6 +34,12 @@ analysis = [
 Homepage = "https://github.com/CompassionML/manager-coercion-bench"
 Paper = "https://arxiv.org/abs/2607.15434"
 
+[tool.pytest.ini_options]
+# The eval is a single top-level module, not a package, so the repo root has to
+# be importable for `pytest` (which, unlike `python -m pytest`, does not add it).
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
