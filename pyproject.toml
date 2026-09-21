@@ -35,8 +35,8 @@ Homepage = "https://github.com/CompassionML/manager-coercion-bench"
 Paper = "https://arxiv.org/abs/2607.15434"
 
 [tool.pytest.ini_options]
-# The eval is a single top-level module, not a package, so the repo root has to
-# be importable for `pytest` (which, unlike `python -m pytest`, does not add it).
+# The eval package sits at the repo root, so the root has to be importable for
+# `pytest` (which, unlike `python -m pytest`, does not add it).
 testpaths = ["tests"]
 pythonpath = ["."]
 
@@ -44,5 +44,8 @@ pythonpath = ["."]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.entry-points.inspect_ai]
+manager_coercion = "manager_coercion"
+
 [tool.hatch.build.targets.wheel]
-include = ["manager_coercion.py", "agent_profiles"]
+packages = ["manager_coercion"]
