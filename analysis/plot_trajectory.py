@@ -7,12 +7,11 @@ dashed line marks the ladder's ceiling (rung 9). Designed for display at
 0.48\\linewidth beside the strip panel, so fonts are calibrated to 9pt at that
 width. Writes figures/escalation_trajectory.pdf (+ .png preview).
 """
-import glob
+from analysis.datapaths import samples
 import re
 import statistics as st
 
 import matplotlib.pyplot as plt
-from inspect_ai.log import read_eval_log
 
 from analysis import figstyle_academic as fs
 
@@ -44,7 +43,7 @@ def seq(s):
 
 
 def mean_by_pos(sub, min_n=10, maxpos=13):
-    seqs = [seq(s) for s in (read_eval_log(sorted(glob.glob(f"logs/coordpanel_{sub}_offramp/*.eval"))[-1]).samples or [])]
+    seqs = [seq(s) for s in (samples(f"coordpanel_{sub}_offramp"))]
     xs, ys = [], []
     for p in range(maxpos):
         vals = [q[p] for q in seqs if len(q) > p]

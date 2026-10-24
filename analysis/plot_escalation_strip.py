@@ -7,7 +7,7 @@ the trajectory panel, so fonts are calibrated to 9pt at that width.
 Reads the coordinator-surface offramp cells.
 Writes figures/escalation_strip.pdf (+ .png preview).
 """
-import glob
+from analysis.datapaths import log_path
 import re
 import statistics
 from collections import Counter
@@ -48,7 +48,7 @@ def top_rung(s):
 
 
 def tops(sub):
-    log = read_eval_log(sorted(glob.glob(f"logs/coordpanel_{sub}_offramp/*.eval"))[-1])
+    log = read_eval_log(log_path(f"coordpanel_{sub}_offramp"))
     return [top_rung(s) for s in log.samples]
 
 
