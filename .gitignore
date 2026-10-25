@@ -47,3 +47,4 @@ _proposed/
 # Public data release: eval logs + generation scripts (tracked on purpose, see data/README.md)
 !data/
 !data/**
+annotation/
